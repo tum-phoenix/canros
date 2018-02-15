@@ -6,6 +6,10 @@ canros only supports Python 2 at this stage.
 ## Installation
 canros requires [ROS Kinetic](http://wiki.ros.org/kinetic/Installation) and [pyuavcan](http://uavcan.org/Implementations/Pyuavcan/) to be installed.
 
+Install pyuavcan:
+
+    pip install uavcan
+
 Clone into the `src` folder in your catkin workspace and run `catkin build`.
 
     cd ~/catkin_ws/src
@@ -31,79 +35,79 @@ For details on the API see the inline documentation in [__init__.py](src/canros/
 ### Examples
 Send a message into the UAVCAN network once every second.
 
-	#!/usr/bin/python
+        #!/usr/bin/python
 
-	from __future__ import print_function
-	import canros
-	import rospy
+        from __future__ import print_function
+        import canros
+        import rospy
 
-	rospy.init_node("canros_message_test")
+        rospy.init_node("canros_message_test")
 
-	# Retrieve canros object for the message 'uavcan.protocol.enumeration.Indication'
-	indication = canros.Message("uavcan.protocol.enumeration.Indication")
+        # Retrieve canros object for the message 'uavcan.protocol.enumeration.Indication'
+        indication = canros.Message("uavcan.protocol.enumeration.Indication")
 
-	# Create a ROS Publisher using the canros object
-	pub = indication.Publisher(queue_size=10)
+        # Create a ROS Publisher using the canros object
+        pub = indication.Publisher(queue_size=10)
 
-	# Use canros object to obtain the ROS type
-	msg = indication.Type()
+        # Use canros object to obtain the ROS type
+        msg = indication.Type()
 
-	# Obtain the ROS type for the message 'uavcan.protocol.param.NumericValue'
-	# which is part of 'uavcan.protocol.enumeration.Indication'
-	msg.value = canros.Message("uavcan.protocol.param.NumericValue").Type()
+        # Obtain the ROS type for the message 'uavcan.protocol.param.NumericValue'
+        # which is part of 'uavcan.protocol.enumeration.Indication'
+        msg.value = canros.Message("uavcan.protocol.param.NumericValue").Type()
 
-	# 'uavcan.protocol.param.NumericValue' is a union type so the 'canros_union_tag' field needs to be set
-	msg.value.canros_union_tag = msg.value.CANROS_UNION_TAG_REAL_VALUE
-	msg.value.real_value = 98.7654321
+        # 'uavcan.protocol.param.NumericValue' is a union type so the 'canros_union_tag' field needs to be set
+        msg.value.canros_union_tag = msg.value.CANROS_UNION_TAG_REAL_VALUE
+        msg.value.real_value = 98.7654321
 
-	msg.parameter_name = canros.to_uint8("canros test")
+        msg.parameter_name = canros.to_uint8("canros test")
 
-	# Spin while publishing the message every second.
-	while True:
-		rospy.sleep(1)
-		if rospy.is_shutdown():
-			raise Exception("ROS shutdown")
-		pub.publish(msg)
+        # Spin while publishing the message every second.
+        while True:
+                rospy.sleep(1)
+                if rospy.is_shutdown():
+                        raise Exception("ROS shutdown")
+                pub.publish(msg)
 
 Provide a service for consumption by the UAVCAN network.
 
-	#!/usr/bin/python
+        #!/usr/bin/python
 
-	from __future__ import print_function
-	import canros
-	import rospy
+        from __future__ import print_function
+        import canros
+        import rospy
 
-	rospy.init_node("canros_service_test")
+        rospy.init_node("canros_service_test")
 
-	# Retrieve canros object for the service 'uavcan.protocol.param.GetSet'
-	get_set = canros.Service("uavcan.protocol.param.GetSet")
+        # Retrieve canros object for the service 'uavcan.protocol.param.GetSet'
+        get_set = canros.Service("uavcan.protocol.param.GetSet")
 
-	def handler(req):
-		print(req)
+        def handler(req):
+                print(req)
 
-		# Use canros object to obtain the ROS response type
-		resp = get_set.Response_Type()
+                # Use canros object to obtain the ROS response type
+                resp = get_set.Response_Type()
 
-		# The 'max_value' and 'min_value' fields are union types so the 'canros_union_tag'
-		# field needs to be set
-		resp.max_value.canros_union_tag = resp.max_value.CANROS_UNION_TAG_EMPTY
-		resp.min_value.canros_union_tag = resp.min_value.CANROS_UNION_TAG_REAL_VALUE
+                # The 'max_value' and 'min_value' fields are union types so the 'canros_union_tag'
+                # field needs to be set
+                resp.max_value.canros_union_tag = resp.max_value.CANROS_UNION_TAG_EMPTY
+                resp.min_value.canros_union_tag = resp.min_value.CANROS_UNION_TAG_REAL_VALUE
 
-		resp.min_value.real_value = 1.23456789
-			resp.value = req.value
-		resp.default_value = req.value
-		resp.name = canros.to_uint8("service test: " + req.name)
+                resp.min_value.real_value = 1.23456789
+                        resp.value = req.value
+                resp.default_value = req.value
+                resp.name = canros.to_uint8("service test: " + req.name)
 
-		return resp
+                return resp
 
-	# Use canros object to create a new ROS service
-	get_set.Service(handler)
+        # Use canros object to create a new ROS service
+        get_set.Service(handler)
 
-	# Spin
-	while True:
-		rospy.sleep(1)
-		if rospy.is_shutdown():
-			raise Exception("ROS shutdown")
+        # Spin
+        while True:
+                rospy.sleep(1)
+                if rospy.is_shutdown():
+                        raise Exception("ROS shutdown")
 
 ## Conversion between ROS and UAVCAN
 Though the specifications for ROS and UAVCAN types are similar, there are a few differences.
