@@ -17,6 +17,19 @@ Clone into the `src` folder in your catkin workspace and run `catkin build`.
     cd ..
     catkin build
 
+Create symlink to custom uavcan messages to enable pyuavcan to find these messages ([more info](https://uavcan.org/Implementations/Pyuavcan/Tutorials/2._Basic_usage/#using-vendor-specific-dsdl-definitions)).
+
+    cd <somefolder>
+    git clone https://github.com/tum-phoenix/drive_teensy_main
+    mkdir ~/uavcan_vendor_specific_types
+    ln -s <somefolder>/drive_teensy_main/lib/phoenix_msgs ~/uavcan_vendor_specific_types/
+    cd <catkin_ws>
+    rm -rf build devel
+    caktin_make
+    source devel/setup.bash
+    
+IMPORTANT: after every custom message change the workspace must be completely wiped with `rm -rf build devel`.
+    
 
 ## Running the canros server
 Run the canros server though ROS.
