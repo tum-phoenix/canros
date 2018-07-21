@@ -197,7 +197,10 @@ def main(argv):
 
 	# Spin
 	while not rospy.is_shutdown():
-		uavcan_node.spin(0.1)
+		try:
+			uavcan_node.spin(0.1)
+		except uavcan.transport.TransferError:
+			rospy.logwarn("Transfer Error occured!")
 	raise Exception("ROS shutdown")
 
 if __name__ == "__main__":
