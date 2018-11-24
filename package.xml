@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>canros</name>
+  <name>drive_ros_uavcan</name>
   <version>0.1.0</version>
   <description>UAVCAN to ROS interface.</description>
 
