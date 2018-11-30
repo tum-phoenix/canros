@@ -143,29 +143,35 @@ def hardware_id():
 
 	raise Exception("Unable to obtain a hardware ID for this system")
 
-def print_help(err):
-	print(
-		err,
-		"",
-		"Run canros with:",
-		"rosrun canros server.py <can_interface> <uavcan_id>",
-		"",
-		"uavcan_id:\tUAVCAN node id for canros. Must be between 1 and 127 inclusive.",
-		"can_interface:\tAddress of CAN interface.",
-	sep='\n')
+def main():
+	# Init ROS node
+	rospy.init_node(canros.ros_node_name)
 
-def main(argv):
-	# Read command line arguments
-	if len(argv) != 2:
-		print_help("Invalid number of arguments")
+	# Get can_interface parameter
+	try:
+		can_interface = rospy.get_param('~can_interface')
+	except KeyError:
+		print("'can_interface' ROS parameter must be set")
 		return
 
-	uavcan_node_id = int(argv[1])
-	if uavcan_node_id < 1 or uavcan_node_id > 127:
-		print_help("Invalid node ID")
+	# Get uavcan_node_id parameter
+	try:
+		uavcan_node_id = int(rospy.get_param('~uavcan_id'))
+		if uavcan_node_id < 0 or uavcan_node_id > 127:
+			raise ValueError()
+	except KeyError:
+		print("'uavcan_id' ROS parameter must be set")
+		return
+	except ValueError:
+		print("'uavcan_id' must be an integer from 0-127")
 		return
 
-	can_interface = argv[0]
+	try:
+		blacklist = list(rospy.get_param('~blacklist'))
+	except KeyError:
+		print("'blacklist' ROS parameter must be set")
+	except ValueError:
+		print("'blacklist' must be a list or strings")
 
 	# Init UAVCAN logging
 	uavcan.driver.slcan.logger.addHandler(logging.StreamHandler())
@@ -178,13 +184,17 @@ def main(argv):
 	uavcan_node_info.software_version.minor = 1
 	uavcan_node_info.hardware_version.unique_id = hardware_id()
 
-	# Start ROS and UAVCAN nodes
+	# Start UAVCAN node
 	global uavcan_node		#pylint: disable=W0603
 	uavcan_node = uavcan.make_node(can_interface, node_id=uavcan_node_id, node_info=uavcan_node_info)
-	rospy.init_node(canros.ros_node_name)
 
 	# Load types
-	for _, typ in uavcan.TYPENAMES.iteritems():
+	for uavcan_name, typ in uavcan.TYPENAMES.iteritems():
+		if typ.default_dtid is None:
+			continue
+		if uavcan_name in blacklist:
+			continue
+
 		_ = Message(typ) if typ.kind == typ.KIND_MESSAGE else Service(typ)
 
 	# GetInfo
@@ -196,12 +206,20 @@ def main(argv):
 	rospy.Service(canros.get_info_topic, canros.srv.GetNodeInfo, GetInfoHandler)
 
 	# Spin
+	uavcan_errors = 0
 	while not rospy.is_shutdown():
 		try:
-			uavcan_node.spin(0.1)
+			uavcan_node.spin(0)
+			if uavcan_errors > 0:
+				uavcan_errors = 0
 		except uavcan.transport.TransferError:
-			rospy.logwarn("Transfer Error occured!")
-	raise Exception("ROS shutdown")
+			uavcan_errors += 1
+			if uavcan_errors >= 1000:
+				print("Too many UAVCAN transport errors")
+				break
+
+	uavcan_node.close()
+	print("canros server exited successfully")
 
 if __name__ == "__main__":
-	main(rospy.myargv()[1:])
+	main()

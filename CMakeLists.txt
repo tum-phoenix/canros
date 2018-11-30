@@ -180,6 +180,10 @@ install(DIRECTORY launch
   FILES_MATCHING PATTERN "*.launch"
 )
 
+install(DIRECTORY config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  FILES_MATCHING PATTERN "*.yaml"
+)
 
 #############
 ## Testing ##
