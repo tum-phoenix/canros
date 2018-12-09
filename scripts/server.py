@@ -173,6 +173,11 @@ def main():
 	except ValueError:
 		print("'blacklist' must be a list or strings")
 
+        try:
+                ignore_uavcan_msgs = rospy.get_param('~ignore_uavcan_msgs')
+        except KeyError:
+                print("'ignore_uavcan_msgs' ROS parameter must be set")
+
 	# Init UAVCAN logging
 	uavcan.driver.slcan.logger.addHandler(logging.StreamHandler())
 	uavcan.driver.slcan.logger.setLevel('DEBUG')
@@ -194,6 +199,8 @@ def main():
 			continue
 		if uavcan_name in blacklist:
 			continue
+                if ignore_uavcan_msgs and uavcan_name.startswith('uavcan'):
+                        continue
 
 		_ = Message(typ) if typ.kind == typ.KIND_MESSAGE else Service(typ)
 
