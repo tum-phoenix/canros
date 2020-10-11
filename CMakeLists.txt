@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(drive_ros_uavcan)
 
 # install uavcan
-execute_process(COMMAND bash "-c" "pip install uavcan")
+execute_process(COMMAND bash "-c" "pip3 install uavcan")
 
 ## Add support for C++11, supported in ROS Kinetic and newer
 # add_definitions(-std=c++11)
